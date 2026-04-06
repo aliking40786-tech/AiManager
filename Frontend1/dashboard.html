@@ -356,6 +356,61 @@ async function loadDashboard() {
 }
 
 loadDashboard();
+
+// Add this at bottom of dashboard script
+async function loadOwnerData() {
+  const token = localStorage.getItem('token');
+  if(!token) { location.href='login.html'; return; }
+  
+  const res = await fetch('/api/shop/owner/my-shops', {
+    headers: {'Authorization': 'Bearer ' + token}
+  });
+  const shops = await res.json();
+  if(!shops.length) return;
+  
+  const shop = shops[0];
+  
+  // Update all hardcoded text
+  document.querySelector('.page-title').textContent = 'Good morning! 👋';
+  document.querySelector('.shop-name').textContent = shop.name;
+  document.querySelector('.shop-cat').textContent = shop.category;
+  document.querySelector('.share-link-box span').textContent = 
+    'aimanager-zh27.onrender.com/book.html?shop=' + shop.slug;
+  
+  // Load bookings
+  const res2 = await fetch('/api/bookings/shop/' + shop.slug, {
+    headers: {'Authorization': 'Bearer ' + token}
+  });
+  const bookings = await res2.json();
+  
+  const list = document.getElementById('bookingsList');
+  list.innerHTML = '';
+  
+  if(bookings.length === 0) {
+    list.innerHTML = '<p style="color:var(--muted);padding:20px;text-align:center">No bookings yet!</p>';
+    return;
+  }
+  
+  bookings.forEach(b => {
+    list.innerHTML += `
+      <div class="booking-item">
+        <div class="booking-avatar" style="background:#FFF0F6;color:#FF6B9D;">
+          ${b.customer_name[0].toUpperCase()}
+        </div>
+        <div class="booking-info">
+          <div class="booking-name">${b.customer_name}</div>
+          <div class="booking-detail">${b.service}</div>
+          <span class="status-badge s-${b.status}">${b.status}</span>
+        </div>
+        <div class="booking-time">
+          <div class="booking-time-val">${b.booking_time}</div>
+          <div class="booking-time-date">${b.booking_date}</div>
+        </div>
+      </div>`;
+  });
+}
+
+loadOwnerData();
 </script>
 </body>
 </html>
